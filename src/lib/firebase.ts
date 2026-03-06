@@ -33,7 +33,14 @@ const functionsAfrica = getFunctions(app, 'africa-south1');
 if (import.meta.env.DEV && !isServer) {
 	connectFirestoreEmulator(db, 'localhost', 8180);
 	connectAuthEmulator(auth, 'http://localhost:9099');
-	for (const fn of [functions, functionsTokyo, functionsOsaka, functionsEurope, functionsUscentral, functionsAfrica]) {
+	for (const fn of [
+		functions,
+		functionsTokyo,
+		functionsOsaka,
+		functionsEurope,
+		functionsUscentral,
+		functionsAfrica,
+	]) {
 		connectFunctionsEmulator(fn, 'localhost', 5001);
 	}
 }

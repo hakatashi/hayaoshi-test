@@ -6,7 +6,15 @@ import {
 	createSignal,
 	type Component,
 } from 'solid-js';
-import {auth, getServerTimeTokyo, getServerTimeOsaka, getServerTimeEurope, getServerTimeUscentral, getServerTimeAfrica, Rooms} from '~/lib/firebase';
+import {
+	auth,
+	getServerTimeTokyo,
+	getServerTimeOsaka,
+	getServerTimeEurope,
+	getServerTimeUscentral,
+	getServerTimeAfrica,
+	Rooms,
+} from '~/lib/firebase';
 import {useAuth, useFirestore} from 'solid-firebase';
 import {doc, serverTimestamp, updateDoc} from 'firebase/firestore';
 import {useParams} from '@solidjs/router';
