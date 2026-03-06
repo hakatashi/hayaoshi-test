@@ -32,6 +32,11 @@ const Index: Component = () => {
 		});
 	};
 
+	const updateTimestampInterval = setInterval(updateTimestamp, 10 * 1000);
+	onCleanup(() => {
+		clearInterval(updateTimestampInterval);
+	});
+
 	createEffect(() => {
 		updateTimestamp();
 	});
@@ -56,13 +61,11 @@ const Index: Component = () => {
 			}
 			setIsOnlineTable(newIsOnlineTable);
 		}
-
-		updateTimestamp();
 	};
 
-	const intervalId = setInterval(onTick, 10 * 1000);
+	const onTickInterval = setInterval(onTick, 500);
 	onCleanup(() => {
-		clearInterval(intervalId);
+		clearInterval(onTickInterval);
 	});
 
 	return (
