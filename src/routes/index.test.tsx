@@ -1,67 +1,71 @@
-import {test, expect} from 'vitest';
+import {Route, Router} from '@solidjs/router';
 import {render, waitFor} from '@solidjs/testing-library';
 import userEvent from '@testing-library/user-event';
+import {expect, test} from 'vitest';
 import Index from './index.js';
 
 const user = userEvent.setup();
 
-test('has add task button', async () => {
-	const {getByRole} = render(() => <Index />);
-	const addTaskButton = getByRole('button');
-	expect(addTaskButton).toHaveTextContent('Add Task');
+const renderWithRouter = () =>
+	render(() => (
+		<Router>
+			<Route path="/" component={Index} />
+		</Router>
+	));
+
+test('has create room button', async () => {
+	const {findByRole} = renderWithRouter();
+	const createRoomButton = await findByRole('button');
+	expect(createRoomButton).toHaveTextContent('Create Room');
 });
 
-test('is able to add task', async () => {
-	const {getByRole, getByText, getAllByRole} = render(() => <Index />);
+test('initially shows no rooms', async () => {
+	const {queryAllByRole} = renderWithRouter();
 
-	// Wait for initial render and Firebase connection
+	// Wait for Firestore loading to complete
 	await waitFor(
 		() => {
-			const tasks = getAllByRole('listitem');
-			expect(tasks).toHaveLength(1);
+			const items = queryAllByRole('listitem');
+			expect(items).toHaveLength(0);
+		},
+		{timeout: 5000},
+	);
+});
+
+test('is able to create a room', async () => {
+	const {getByRole, getAllByRole} = renderWithRouter();
+
+	// Wait for auth state to be ready (button becomes enabled)
+	await waitFor(
+		() => {
+			const button = getByRole('button');
+			expect(button).not.toBeDisabled();
 		},
 		{timeout: 5000},
 	);
 
-	const taskInput = getByRole('textbox');
-	expect(taskInput).toHaveValue('');
+	const roomInput = getByRole('textbox');
+	expect(roomInput).toHaveValue('');
 
-	const addTaskButton = getByText('Add Task');
-	expect(addTaskButton).not.toBeDisabled();
+	// Type room name and submit
+	await user.type(roomInput, 'Test Room');
+	await user.click(getByRole('button'));
 
-	// Type the task
-	await user.type(taskInput, 'Hello, World!');
-
-	// Click add task button
-	await user.click(addTaskButton);
-
-	// Wait for the input to be cleared (indicating successful save)
+	// Input should be cleared after submission
 	await waitFor(
 		() => {
-			const taskInput = getByRole('textbox');
-			expect(taskInput).toHaveValue('');
+			expect(getByRole('textbox')).toHaveValue('');
 		},
-		{
-			timeout: 10000,
-		},
+		{timeout: 10000},
 	);
 
-	// Wait for the new task to appear in the list
+	// New room should appear in the list
 	await waitFor(
 		() => {
-			const tasks = getAllByRole('listitem');
-			expect(tasks).toHaveLength(2);
+			const items = getAllByRole('listitem');
+			expect(items).toHaveLength(1);
+			expect(items[0]).toHaveTextContent('Test Room');
 		},
-		{
-			timeout: 10000,
-		},
+		{timeout: 10000},
 	);
-
-	// Check the task content
-	const tasks = getAllByRole('listitem');
-	const newTask = tasks.find((task) =>
-		task.textContent?.includes('Hello, World!'),
-	);
-	expect(newTask).toBeTruthy();
-	expect(newTask).toHaveTextContent('Hello, World!');
 });
