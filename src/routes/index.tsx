@@ -26,34 +26,40 @@ const Index: Component = () => {
 			name: newRoomName(),
 			createdBy: authState.data.uid,
 			createdAt: serverTimestamp(),
+			participants: {},
 		});
 
 		setNewRoomName('');
 	};
 
 	return (
-		<ul class={styles.rooms}>
-			<Collection data={rooms}>
-				{(roomData) => (
-					<li class={styles.room}>
-						<A href={`/rooms/${roomData.id}`}>{roomData.name}</A>
-					</li>
-				)}
-			</Collection>
-			<li class={styles.addRoom}>
-				<form onSubmit={onCreateRoom}>
-					<input
-						type="text"
-						name="room"
-						value={newRoomName()}
-						onChange={(event) => setNewRoomName(event.currentTarget?.value)}
-					/>
-					<button type="submit" disabled={!authState.data}>
-						Create Room
-					</button>
-				</form>
-			</li>
-		</ul>
+		<div class={styles.container}>
+			<ul class={styles.rooms}>
+				<Collection data={rooms}>
+					{(roomData) => (
+						<li class={styles.room}>
+							<A href={`/rooms/${roomData.id}`}>
+								<span class={styles.roomName}>{roomData.name}</span>
+								<span class={styles.roomParticipants}>
+									{Object.keys(roomData.participants || {}).length} participants
+								</span>
+							</A>
+						</li>
+					)}
+				</Collection>
+			</ul>
+			<form onSubmit={onCreateRoom}>
+				<input
+					type="text"
+					name="room"
+					value={newRoomName()}
+					onChange={(event) => setNewRoomName(event.currentTarget?.value)}
+				/>
+				<button type="submit" disabled={!authState.data}>
+					Create Room
+				</button>
+			</form>
+		</div>
 	);
 };
 
