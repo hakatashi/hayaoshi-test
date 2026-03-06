@@ -3,6 +3,7 @@ import {auth, Rooms} from '~/lib/firebase';
 import {useAuth, useFirestore} from 'solid-firebase';
 import Collection from '~/lib/Collection';
 import {addDoc, orderBy, query, serverTimestamp} from 'firebase/firestore';
+import {A} from '@solidjs/router';
 
 import styles from './index.module.css';
 
@@ -33,7 +34,11 @@ const Index: Component = () => {
 	return (
 		<ul class={styles.rooms}>
 			<Collection data={rooms}>
-				{(roomData) => <li class={styles.room}>{roomData.name}</li>}
+				{(roomData) => (
+					<li class={styles.room}>
+						<A href={`/rooms/${roomData.id}`}>{roomData.name}</A>
+					</li>
+				)}
 			</Collection>
 			<li class={styles.addRoom}>
 				<form onSubmit={onCreateRoom}>

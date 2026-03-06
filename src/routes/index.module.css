@@ -9,4 +9,10 @@ li.room {
 	padding: 10px;
 	border: 1px solid #ccc;
 	margin-bottom: 10px;
+
+	a {
+		display: block;
+		text-decoration: none;
+		color: #333;
+	}
 }
