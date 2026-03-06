@@ -6,8 +6,7 @@ import {
 	createSignal,
 	type Component,
 } from 'solid-js';
-import {auth, functions, Rooms} from '~/lib/firebase';
-import {httpsCallable} from 'firebase/functions';
+import {auth, getServerTimeTokyo, getServerTimeOsaka, getServerTimeEurope, getServerTimeUscentral, getServerTimeAfrica, Rooms} from '~/lib/firebase';
 import {useAuth, useFirestore} from 'solid-firebase';
 import {doc, serverTimestamp, updateDoc} from 'firebase/firestore';
 import {useParams} from '@solidjs/router';
@@ -42,14 +41,11 @@ const Index: Component = () => {
 		updateTimestamp();
 	});
 
-	const getServerTimeCallable = httpsCallable<never, {serverTime: number}>(
-		functions,
-		'getServerTime',
-	);
 	const clockOffsetHistory: number[] = [];
 	const pingHistory: number[] = [];
 	const [clockOffsetAvg, setClockOffsetAvg] = createSignal<number | null>(null);
 	const [pingAvg, setPingAvg] = createSignal<number | null>(null);
+	const [selectedRegion, setSelectedRegion] = createSignal<string | null>(null);
 
 	const trimmedMean = (history: number[]) => {
 		const sorted = [...history].sort((a, b) => a - b);
@@ -59,7 +55,17 @@ const Index: Component = () => {
 
 	const syncClock = async () => {
 		const t0 = Date.now();
-		const result = await getServerTimeCallable();
+		const callers = [
+			{fn: getServerTimeTokyo, region: 'asia-northeast1 (Tokyo)'},
+			{fn: getServerTimeOsaka, region: 'asia-northeast2 (Osaka)'},
+			{fn: getServerTimeEurope, region: 'europe-west1 (Belgium)'},
+			{fn: getServerTimeUscentral, region: 'us-central1 (Iowa)'},
+			{fn: getServerTimeAfrica, region: 'africa-south1 (Johannesburg)'},
+		];
+		const {result, region} = await Promise.any(
+			callers.map(async ({fn, region}) => ({result: await fn(), region})),
+		);
+		setSelectedRegion(region);
 		const t2 = Date.now();
 		const serverTime = result.data.serverTime;
 		// NTP-style offset: positive means server is ahead of local clock
@@ -117,6 +123,10 @@ const Index: Component = () => {
 						<h1>{roomData.name}</h1>
 						<p>Created at: {roomData.createdAt?.toDate()?.toLocaleString()}</p>
 						<p>Created by: {roomData.createdBy}</p>
+						<p>
+							Region:{' '}
+							{selectedRegion() === null ? 'Measuring...' : selectedRegion()}
+						</p>
 						<p>
 							Clock offset:{' '}
 							{clockOffsetAvg() === null

@@ -14,9 +14,13 @@ const db = getFirestore(app);
 
 const Rooms = db.collection('rooms') as CollectionReference<Room>;
 
-export const getServerTime = onCall((_request) => {
-	return {serverTime: Date.now()};
-});
+const serverTimeHandler = () => ({serverTime: Date.now()});
+
+export const getServerTimeTokyo = onCall({region: 'asia-northeast1'}, serverTimeHandler);
+export const getServerTimeOsaka = onCall({region: 'asia-northeast2'}, serverTimeHandler);
+export const getServerTimeEurope = onCall({region: 'europe-west1'}, serverTimeHandler);
+export const getServerTimeUscentral = onCall({region: 'us-central1'}, serverTimeHandler);
+export const getServerTimeAfrica = onCall({region: 'africa-south1'}, serverTimeHandler);
 
 export const resetRoomsCronJob = onSchedule('every 24 hours', async (event) => {
 	loggerInfo('Resetting rooms');
