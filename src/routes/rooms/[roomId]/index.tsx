@@ -55,6 +55,16 @@ const Index: Component = () => {
 	const [pingAvg, setPingAvg] = createSignal<number | null>(null);
 	const [selectedRegion, setSelectedRegion] = createSignal<string | null>(null);
 
+	const callers = [
+		{fn: getServerTimeTokyo, region: 'asia-northeast1 (Tokyo)'},
+		{fn: getServerTimeOsaka, region: 'asia-northeast2 (Osaka)'},
+		{fn: getServerTimeEurope, region: 'europe-west1 (Belgium)'},
+		{fn: getServerTimeUscentral, region: 'us-central1 (Iowa)'},
+		{fn: getServerTimeAfrica, region: 'africa-south1 (Johannesburg)'},
+	];
+	const regionSelectionCount: Record<string, number> = {};
+	let syncCount = 0;
+
 	const trimmedMean = (history: number[]) => {
 		const sorted = [...history].sort((a, b) => a - b);
 		const trimmed = sorted.length > 2 ? sorted.slice(1, -1) : sorted;
@@ -63,16 +73,21 @@ const Index: Component = () => {
 
 	const syncClock = async () => {
 		const t0 = Date.now();
-		const callers = [
-			{fn: getServerTimeTokyo, region: 'asia-northeast1 (Tokyo)'},
-			{fn: getServerTimeOsaka, region: 'asia-northeast2 (Osaka)'},
-			{fn: getServerTimeEurope, region: 'europe-west1 (Belgium)'},
-			{fn: getServerTimeUscentral, region: 'us-central1 (Iowa)'},
-			{fn: getServerTimeAfrica, region: 'africa-south1 (Johannesburg)'},
-		];
+		const activeCaller =
+			syncCount < 5
+				? callers
+				: callers.filter(
+						(c) =>
+							c.region ===
+							Object.entries(regionSelectionCount).sort(
+								(a, b) => b[1] - a[1],
+							)[0][0],
+					);
 		const {result, region} = await Promise.any(
-			callers.map(async ({fn, region}) => ({result: await fn(), region})),
+			activeCaller.map(async ({fn, region}) => ({result: await fn(), region})),
 		);
+		syncCount++;
+		regionSelectionCount[region] = (regionSelectionCount[region] ?? 0) + 1;
 		setSelectedRegion(region);
 		const t2 = Date.now();
 		const serverTime = result.data.serverTime;
