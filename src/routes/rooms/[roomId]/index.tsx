@@ -6,7 +6,8 @@ import {
 	createSignal,
 	type Component,
 } from 'solid-js';
-import {auth, Rooms} from '~/lib/firebase';
+import {auth, functions, Rooms} from '~/lib/firebase';
+import {httpsCallable} from 'firebase/functions';
 import {useAuth, useFirestore} from 'solid-firebase';
 import {doc, serverTimestamp, updateDoc} from 'firebase/firestore';
 import {useParams} from '@solidjs/router';
@@ -39,6 +40,46 @@ const Index: Component = () => {
 
 	createEffect(() => {
 		updateTimestamp();
+	});
+
+	const getServerTimeCallable = httpsCallable<never, {serverTime: number}>(
+		functions,
+		'getServerTime',
+	);
+	const clockOffsetHistory: number[] = [];
+	const pingHistory: number[] = [];
+	const [clockOffsetAvg, setClockOffsetAvg] = createSignal<number | null>(null);
+	const [pingAvg, setPingAvg] = createSignal<number | null>(null);
+
+	const trimmedMean = (history: number[]) => {
+		const sorted = [...history].sort((a, b) => a - b);
+		const trimmed = sorted.length > 2 ? sorted.slice(1, -1) : sorted;
+		return trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
+	};
+
+	const syncClock = async () => {
+		const t0 = Date.now();
+		const result = await getServerTimeCallable();
+		const t2 = Date.now();
+		const serverTime = result.data.serverTime;
+		// NTP-style offset: positive means server is ahead of local clock
+		clockOffsetHistory.push(serverTime - (t0 + t2) / 2);
+		if (clockOffsetHistory.length > 5) {
+			clockOffsetHistory.shift();
+		}
+		// One-way latency estimate
+		pingHistory.push((t2 - t0) / 2);
+		if (pingHistory.length > 5) {
+			pingHistory.shift();
+		}
+		setClockOffsetAvg(trimmedMean(clockOffsetHistory));
+		setPingAvg(trimmedMean(pingHistory));
+	};
+
+	syncClock();
+	const syncClockInterval = setInterval(syncClock, 10 * 1000);
+	onCleanup(() => {
+		clearInterval(syncClockInterval);
 	});
 
 	const [isOnlineTable, setIsOnlineTable] = createSignal<
@@ -76,6 +117,18 @@ const Index: Component = () => {
 						<h1>{roomData.name}</h1>
 						<p>Created at: {roomData.createdAt?.toDate()?.toLocaleString()}</p>
 						<p>Created by: {roomData.createdBy}</p>
+						<p>
+							Clock offset:{' '}
+							{clockOffsetAvg() === null
+								? 'Measuring...'
+								: `${(clockOffsetAvg() as number) > 0 ? '+' : ''}${(clockOffsetAvg() as number).toFixed(1)} ms`}
+						</p>
+						<p>
+							Ping:{' '}
+							{pingAvg() === null
+								? 'Measuring...'
+								: `${(pingAvg() as number).toFixed(1)} ms`}
+						</p>
 						<ul class={styles.participants}>
 							<For each={Object.keys(roomData.participants)}>
 								{(uid) => (
@@ -93,6 +146,9 @@ const Index: Component = () => {
 								)}
 							</For>
 						</ul>
+						<div class={styles.controls}>
+							<button type="button">Slash!</button>
+						</div>
 					</>
 				)}
 			</Doc>
