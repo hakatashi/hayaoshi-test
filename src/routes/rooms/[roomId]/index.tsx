@@ -72,24 +72,24 @@ const Index: Component = () => {
 	};
 
 	const syncClock = async () => {
-		const t0 = Date.now();
-		const activeCaller =
+		const mostSelectedRegion =
+			Object.entries(regionSelectionCount).sort(
+				([, countA], [, countB]) => countB - countA,
+			)[0]?.[0] ?? null;
+		const activeCallers =
 			syncCount < 5
 				? callers
-				: callers.filter(
-						(c) =>
-							c.region ===
-							Object.entries(regionSelectionCount).sort(
-								(a, b) => b[1] - a[1],
-							)[0][0],
-					);
+				: callers.filter((c) => c.region === mostSelectedRegion);
+
+		const t0 = Date.now();
 		const {result, region} = await Promise.any(
-			activeCaller.map(async ({fn, region}) => ({result: await fn(), region})),
+			activeCallers.map(async ({fn, region}) => ({result: await fn(), region})),
 		);
+		const t2 = Date.now();
+
 		syncCount++;
 		regionSelectionCount[region] = (regionSelectionCount[region] ?? 0) + 1;
 		setSelectedRegion(region);
-		const t2 = Date.now();
 		const serverTime = result.data.serverTime;
 		// NTP-style offset: positive means server is ahead of local clock
 		clockOffsetHistory.push(serverTime - (t0 + t2) / 2);
