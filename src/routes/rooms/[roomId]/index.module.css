@@ -1,0 +1,9 @@
+.participants {
+	.participant {
+		color: silver;
+
+		&.online {
+			color: dimgray;
+		}
+	}
+}
