@@ -1,11 +1,11 @@
-ul.tasks {
+ul.rooms {
 	width: 42rem;
 	margin: 1rem auto;
 	list-style-type: none;
 	padding: 0;
 }
 
-li.task {
+li.room {
 	padding: 10px;
 	border: 1px solid #ccc;
 	margin-bottom: 10px;

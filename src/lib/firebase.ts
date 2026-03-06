@@ -7,7 +7,7 @@ import {
 	collection,
 	type CollectionReference,
 } from 'firebase/firestore';
-import type {Task} from './schema.ts';
+import type {Room} from './schema.ts';
 
 const firebaseConfigResponse = await fetch('/__/firebase/init.json');
 const firebaseConfig = await firebaseConfigResponse.json();
@@ -19,12 +19,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 if (import.meta.env.DEV && !isServer) {
-	connectFirestoreEmulator(db, 'localhost', 8080);
+	connectFirestoreEmulator(db, 'localhost', 8180);
 	connectAuthEmulator(auth, 'http://localhost:9099');
 }
 
-const Tasks = collection(db, 'tasks') as CollectionReference<Task>;
+const Rooms = collection(db, 'rooms') as CollectionReference<Room>;
 
 await signInAnonymously(auth);
 
-export {app as default, auth, db, Tasks};
+export {app as default, auth, db, Rooms};

@@ -20,7 +20,7 @@ vi.stubGlobal('fetch', fetchMock);
 beforeEach(async () => {
 	// Reset firestore data
 	await originalFetch(
-		'http://localhost:8080/emulator/v1/projects/hayaoshi-test-dev/databases/(default)/documents',
+		'http://localhost:8180/emulator/v1/projects/hayaoshi-test-dev/databases/(default)/documents',
 		{
 			method: 'DELETE',
 		},

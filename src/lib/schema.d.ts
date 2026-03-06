@@ -11,3 +11,9 @@ export interface Task extends DocumentData {
 	task: string;
 	createdAt: Timestamp;
 }
+
+export interface Room extends DocumentData {
+	name: string;
+	createdAt: Timestamp;
+	createdBy: string;
+}

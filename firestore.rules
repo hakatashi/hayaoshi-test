@@ -7,5 +7,14 @@ service cloud.firestore {
       allow write: if request.auth.uid != null && request.auth.uid == request.resource.data.uid;
       allow delete;
     }
+
+    match /rooms/{roomId} {
+      allow read;
+      allow write: if request.auth.uid != null
+        && request.resource.data.keys().hasOnly(['name', 'createdAt', 'createdBy'])
+        && request.resource.data.name is string
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+    }
   }
 }
