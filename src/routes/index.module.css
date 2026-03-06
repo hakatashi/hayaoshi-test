@@ -1,18 +1,105 @@
-ul.rooms {
-	width: 42rem;
-	margin: 1rem auto;
-	list-style-type: none;
-	padding: 0;
+.container {
+	max-width: 48rem;
+	margin: 3rem auto;
+	padding: 0 1.5rem;
+	font-family: system-ui, -apple-system, sans-serif;
 }
 
-li.room {
-	padding: 10px;
-	border: 1px solid #ccc;
-	margin-bottom: 10px;
+.rooms {
+	list-style: none;
+	padding: 0;
+	margin: 0 0 2rem 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.room {
+	border-radius: 12px;
+	background: #fff;
+	box-shadow:
+		0 1px 3px rgba(0, 0, 0, 0.08),
+		0 1px 8px rgba(0, 0, 0, 0.04);
+	transition:
+		box-shadow 0.15s ease,
+		transform 0.15s ease;
+
+	&:hover {
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.12),
+			0 2px 6px rgba(0, 0, 0, 0.06);
+		transform: translateY(-1px);
+	}
 
 	a {
-		display: block;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1rem 1.25rem;
 		text-decoration: none;
-		color: #333;
+		color: inherit;
+		border-radius: 12px;
+	}
+}
+
+.roomName {
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: #1a1a1a;
+}
+
+.roomParticipants {
+	font-size: 0.8rem;
+	color: #888;
+	background: #f3f4f6;
+	padding: 0.2rem 0.65rem;
+	border-radius: 99px;
+	white-space: nowrap;
+}
+
+form {
+	display: flex;
+	gap: 0.625rem;
+
+	input[type='text'] {
+		flex: 1;
+		padding: 0.65rem 1rem;
+		border: 1.5px solid #e0e0e0;
+		border-radius: 10px;
+		font-size: 0.95rem;
+		outline: none;
+		background: #fff;
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease;
+
+		&:focus {
+			border-color: #6366f1;
+			box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+		}
+	}
+
+	button[type='submit'] {
+		padding: 0.65rem 1.25rem;
+		background: #6366f1;
+		color: #fff;
+		border: none;
+		border-radius: 10px;
+		font-size: 0.95rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			background 0.15s ease,
+			opacity 0.15s ease;
+		white-space: nowrap;
+
+		&:hover:not(:disabled) {
+			background: #4f46e5;
+		}
+
+		&:disabled {
+			opacity: 0.45;
+			cursor: not-allowed;
+		}
 	}
 }
