@@ -6,12 +6,6 @@ export interface UseFireStoreReturn<T> {
 	error: FirestoreError | null;
 }
 
-export interface Task extends DocumentData {
-	uid: string;
-	task: string;
-	createdAt: Timestamp;
-}
-
 export interface Room extends DocumentData {
 	name: string;
 	createdAt: Timestamp;
