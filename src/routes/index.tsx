@@ -2,7 +2,7 @@ import {createSignal, type Component, type JSX} from 'solid-js';
 import {auth, Rooms} from '~/lib/firebase';
 import {useAuth, useFirestore} from 'solid-firebase';
 import Collection from '~/lib/Collection';
-import {addDoc, orderBy, query, serverTimestamp, Timestamp} from 'firebase/firestore';
+import {addDoc, orderBy, query, serverTimestamp} from 'firebase/firestore';
 
 import styles from './index.module.css';
 
