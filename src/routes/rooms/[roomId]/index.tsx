@@ -31,6 +31,7 @@ import Doc from '~/lib/Doc';
 
 import styles from './index.module.css';
 import type {RoomSession} from '~/lib/schema';
+import {SessionController} from '~/lib/SessionController';
 
 const Index: Component = () => {
 	const params = useParams();
@@ -148,18 +149,23 @@ const Index: Component = () => {
 		clearInterval(onTickInterval);
 	});
 
-	const activeSessionIdMemo = createMemo(() => {
+	const activeSessionId = createMemo(() => {
 		if (!room.data) {
 			return null;
 		}
 		return room.data.activeSessionId;
 	});
 
-	createEffect(async () => {
-		const activeSessionId = activeSessionIdMemo();
+	const isRoomOwner = createMemo(() => {
+		if (!authState.data || !room.data) {
+			return null;
+		}
+		return authState.data.uid === room.data.createdBy;
+	});
 
+	createEffect(async () => {
 		// If the room is loaded and there's no active session, try to create one
-		if (room.loading === false && activeSessionId === null) {
+		if (room.loading === false && activeSessionId() === null && isRoomOwner()) {
 			await runTransaction(db, async (transaction) => {
 				// Re-read the room document within the transaction to ensure we have the latest data
 				const freshRoomDoc = await transaction.get(roomRef);
@@ -204,9 +210,7 @@ const Index: Component = () => {
 								? 'Measuring...'
 								: `${(pingAvg() as number).toFixed(1)} ms`}
 						</p>
-						<p>
-							Active session ID: {activeSessionIdMemo() ?? 'No active session'}
-						</p>
+						<p>Active session ID: {activeSessionId() ?? 'No active session'}</p>
 						<ul class={styles.participants}>
 							<For each={Object.keys(roomData.participants)}>
 								{(uid) => (
@@ -224,9 +228,19 @@ const Index: Component = () => {
 								)}
 							</For>
 						</ul>
-						<div class={styles.controls}>
-							<button type="button">Slash!</button>
-						</div>
+						<Show when={activeSessionId()}>
+							{(sessionId) => (
+								<Show when={params.roomId}>
+									{(roomId) => (
+										<SessionController
+											roomId={roomId()}
+											sessionId={sessionId()}
+											isRoomOwner={isRoomOwner()}
+										/>
+									)}
+								</Show>
+							)}
+						</Show>
 					</>
 				)}
 			</Doc>
