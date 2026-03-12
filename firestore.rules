@@ -3,19 +3,60 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /rooms/{roomId} {
+      // 誰でもルームを読める
       allow read;
+
+      // 認証済みユーザーが自分をcreatedByとして指定した場合のみルームを作成できる
       allow create: if request.auth.uid != null
-        && request.resource.data.keys().hasOnly(['name', 'createdAt', 'createdBy', 'participants'])
+        && request.resource.data.keys().hasOnly(['name', 'createdAt', 'createdBy', 'participants', 'activeSessionId'])
         && request.resource.data.name is string
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.createdAt == request.time
         && request.resource.data.participants is map
-        && request.resource.data.participants.keys().size() == 0;
+        && request.resource.data.participants.keys().size() == 0
+        && request.resource.data.activeSessionId == null;
+
+      // 認証済みユーザーが自分のエントリをparticipantsに追加できる
       allow update: if request.auth.uid != null
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
         && request.resource.data.participants is map
         && request.resource.data.participants.keys().toSet() == resource.data.participants.keys().toSet().union([request.auth.uid].toSet())
         && request.resource.data.participants[request.auth.uid] == request.time;
+
+      // ルーム作成者のみがactiveSessionIdを更新できる
+      allow update: if request.auth.uid != null
+        && resource.data.createdBy == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activeSessionId'])
+        && (request.resource.data.activeSessionId is string || request.resource.data.activeSessionId == null);
+    }
+
+    match /rooms/{roomId}/sessions/{sessionId} {
+      // 誰でもセッションを読める
+      allow read;
+
+      // ルーム作成者のみが、アクティブなセッションがないか終了済みの場合に新しいセッションを作成できる
+      allow create: if request.auth.uid != null
+        && get(/databases/$(database)/documents/rooms/$(roomId)).data.createdBy == request.auth.uid
+        && (get(/databases/$(database)/documents/rooms/$(roomId)).data.activeSessionId == null
+            || get(/databases/$(database)/documents/rooms/$(roomId)/sessions/$(get(/databases/$(database)/documents/rooms/$(roomId)).data.activeSessionId)).data.endedAt != null)
+        && request.resource.data.keys().hasOnly(['createdAt', 'endedAt', 'slashes'])
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.endedAt == null
+        && request.resource.data.slashes is map
+        && request.resource.data.slashes.keys().size() == 0;
+
+      // ルーム作成者のみがセッションを終了できる
+      allow update: if request.auth.uid != null
+        && get(/databases/$(database)/documents/rooms/$(roomId)).data.createdBy == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['endedAt'])
+        && resource.data.endedAt == null
+        && request.resource.data.endedAt is timestamp;
+
+      // ルームの参加者が自分のslashエントリのみを更新できる
+      allow update: if request.auth.uid != null
+        && get(/databases/$(database)/documents/rooms/$(roomId)).data.participants.keys().hasAll([request.auth.uid])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['slashes'])
+        && request.resource.data.slashes.diff(resource.data.slashes).affectedKeys().hasOnly([request.auth.uid]);
     }
   }
 }

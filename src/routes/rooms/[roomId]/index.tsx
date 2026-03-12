@@ -5,6 +5,7 @@ import {
 	Show,
 	createSignal,
 	type Component,
+	createMemo,
 } from 'solid-js';
 import {
 	auth,
@@ -14,13 +15,22 @@ import {
 	getServerTimeUscentral,
 	getServerTimeAfrica,
 	Rooms,
+	db,
 } from '~/lib/firebase';
 import {useAuth, useFirestore} from 'solid-firebase';
-import {doc, serverTimestamp, updateDoc} from 'firebase/firestore';
+import {
+	collection,
+	type CollectionReference,
+	doc,
+	runTransaction,
+	serverTimestamp,
+	updateDoc,
+} from 'firebase/firestore';
 import {useParams} from '@solidjs/router';
 import Doc from '~/lib/Doc';
 
 import styles from './index.module.css';
+import type {RoomSession} from '~/lib/schema';
 
 const Index: Component = () => {
 	const params = useParams();
@@ -138,6 +148,38 @@ const Index: Component = () => {
 		clearInterval(onTickInterval);
 	});
 
+	const activeSessionIdMemo = createMemo(() => {
+		if (!room.data) {
+			return null;
+		}
+		return room.data.activeSessionId;
+	});
+
+	createEffect(async () => {
+		const activeSessionId = activeSessionIdMemo();
+
+		// If the room is loaded and there's no active session, try to create one
+		if (room.loading === false && activeSessionId === null) {
+			await runTransaction(db, async (transaction) => {
+				// Re-read the room document within the transaction to ensure we have the latest data
+				const freshRoomDoc = await transaction.get(roomRef);
+				if (freshRoomDoc.data()?.activeSessionId) {
+					return;
+				}
+
+				const sessionRef = doc(
+					collection(roomRef, 'sessions') as CollectionReference<RoomSession>,
+				);
+				transaction.set(sessionRef, {
+					createdAt: serverTimestamp(),
+					endedAt: null,
+					slashes: {},
+				});
+				transaction.update(roomRef, {activeSessionId: sessionRef.id});
+			});
+		}
+	});
+
 	return (
 		<div>
 			<Doc data={room}>
@@ -161,6 +203,9 @@ const Index: Component = () => {
 							{pingAvg() === null
 								? 'Measuring...'
 								: `${(pingAvg() as number).toFixed(1)} ms`}
+						</p>
+						<p>
+							Active session ID: {activeSessionIdMemo() ?? 'No active session'}
 						</p>
 						<ul class={styles.participants}>
 							<For each={Object.keys(roomData.participants)}>

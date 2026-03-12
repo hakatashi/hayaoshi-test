@@ -26,6 +26,7 @@ const Index: Component = () => {
 			name: newRoomName(),
 			createdBy: authState.data.uid,
 			createdAt: serverTimestamp(),
+			activeSessionId: null,
 			participants: {},
 		});
 
